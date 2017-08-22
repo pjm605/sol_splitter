@@ -2,15 +2,12 @@ pragma solidity ^0.4.6;
 
 contract Splitter {
     address     public owner;
-    address     public receiver1;
-    address     public receiver2;
     bool        public killed;
     
-    function Splitter(address _receiver1, address _receiver2) {
+    mapping (address => uint) balances;
+    
+    function Splitter() {
         owner = msg.sender;
-        receiver1 = _receiver1;
-        receiver2 = _receiver2;
-        killed = false;
     }
     
     modifier isOwner() {
@@ -22,25 +19,39 @@ contract Splitter {
         require (!killed);
         _;
     }
-
-    function sendToReceivers()
+    
+    function sendToReceivers(address _receiver1, address _receiver2)
         isNotKilled()
-        isOwner()
         public
         payable
-        returns(bool isSuccess)
+        returns (bool)
     {
-        if (msg.value <= 1) revert();
-        uint realAmount = msg.value/2;
-        if (!receiver1.send(realAmount)) revert();
+        require(msg.value > 0);
         
-        // for odd amounts, add truncated one to second receiver
-        if (realAmount % 2 != 0) {
-            realAmount += 1;
+        uint splitAmount = msg.value/2;
+        
+        balances[_receiver1] += splitAmount;
+        balances[_receiver2] += splitAmount;
+        
+        // return any remaining wei from odd value, back for the caller
+        if (msg.value % 2 != 0) {
+            balances[msg.sender] += 1;
         }
-        if (!receiver2.send(realAmount)) revert();
         return true;
     }
+    
+    function receiveFunds(address _recipient)
+        isNotKilled()
+        public 
+        payable
+        returns (bool)
+    {
+        require(balances[_recipient] > 0);
+        uint amount = balances[_recipient];
+        _recipient.transfer(amount);
+        balances[_recipient] = 0;
+    }
+    
     
     function killContract()
         isNotKilled()
@@ -49,28 +60,11 @@ contract Splitter {
         killed = true;
     }
     
-    function getOwnerBalance()
-        constant
+    function getBalance(address _address)
+        isNotKilled()
+        public
         returns (uint)
     {
-        return owner.balance;
+        return balances[_address];
     }
-    
-    function getReceiver1Balance()
-        constant
-        returns (uint)
-    {
-        return receiver1.balance;
-    }
-
-    function getReceiver2Balance()
-        constant
-        returns (uint)
-    {
-        return receiver2.balance;
-    }
-    
-    
 }
-
-
