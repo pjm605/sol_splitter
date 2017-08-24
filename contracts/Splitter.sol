@@ -2,7 +2,6 @@ pragma solidity ^0.4.6;
 
 contract Splitter {
     address     public owner;
-    bool        public killed;
     
     mapping (address => uint) balances;
     
@@ -18,13 +17,7 @@ contract Splitter {
         _;
     }
     
-    modifier isNotKilled () {
-        require (!killed);
-        _;
-    }
-    
     function sendToReceivers(address _receiver1, address _receiver2)
-        isNotKilled()
         public
         payable
         returns (bool)
@@ -53,8 +46,8 @@ contract Splitter {
         require(balances[msg.sender] > 0);
         
         uint amount = balances[msg.sender];
-        msg.sender.transfer(amount);
         balances[msg.sender] = 0;
+        msg.sender.transfer(amount);
         LogWithdraw(msg.sender, amount);
         return true;
     }
@@ -62,15 +55,15 @@ contract Splitter {
     
     
     function killContract()
-        isNotKilled()
+        public
         isOwner()
     {
-        killed = true;
+        selfdestruct(owner);
     }
     
     function getBalance(address _address)
-        isNotKilled()
         public
+        constant
         returns (uint)
     {
         return balances[_address];
