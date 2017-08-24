@@ -6,6 +6,9 @@ contract Splitter {
     
     mapping (address => uint) balances;
     
+    event LogSendToReceivers (address sender, address receiver1, address receiver2, uint amount);
+    event LogWithdraw (address withdrawTo, uint amount);
+
     function Splitter() {
         owner = msg.sender;
     }
@@ -37,20 +40,25 @@ contract Splitter {
         if (msg.value % 2 != 0) {
             balances[msg.sender] += 1;
         }
+
+        LogSendToReceivers (msg.sender, _receiver1, _receiver2, splitAmount);
         return true;
     }
     
-    function receiveFunds(address _recipient)
-        isNotKilled()
-        public 
+    function withdraw () 
+        public
         payable
         returns (bool)
     {
-        require(balances[_recipient] > 0);
-        uint amount = balances[_recipient];
-        _recipient.transfer(amount);
-        balances[_recipient] = 0;
+        require(balances[msg.sender] > 0);
+        
+        uint amount = balances[msg.sender];
+        msg.sender.transfer(amount);
+        balances[msg.sender] = 0;
+        LogWithdraw(msg.sender, amount);
+        return true;
     }
+    
     
     
     function killContract()
