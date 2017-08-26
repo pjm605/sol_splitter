@@ -6,7 +6,7 @@ contract Splitter {
     mapping (address => uint) balances;
     
     event LogSendToReceivers (address sender, address receiver1, address receiver2, uint amount);
-    event LogWithdraw (address withdrawTo, uint amount);
+    event LogWithdrawn (address withdrawTo, uint amount);
 
     function Splitter() {
         owner = msg.sender;
